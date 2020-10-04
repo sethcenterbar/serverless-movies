@@ -1,0 +1,63 @@
+service: go-serverless-movies
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: go1.x
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      # Restrict our IAM role permissions to
+      # the specific table for the stage
+      Resource:
+        - "Fn::GetAtt": [ MoviesDynamoDbTable, Arn ]
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+
+
+functions:
+  get:
+    handler: bin/get
+    events:
+      - http:
+          path: movies/{id}
+          method: get
+          request:
+            parameter:
+              paths:
+                name: true
+  put:
+    handler: bin/world
+    events:
+      - http:
+          path: world
+          method: get
+
+resources:
+  Resources:
+    MoviesDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: pk
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: go-movies
